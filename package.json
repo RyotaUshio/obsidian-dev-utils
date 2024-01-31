@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-dev-utils",
 	"version": "0.1.0",
-	"description": "",
+	"description": "An Obsidian.md plugin that provides a collection of useful tools available everywhere you can run JavaScript.",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",

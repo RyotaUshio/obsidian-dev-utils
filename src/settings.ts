@@ -2,32 +2,55 @@ import { PluginSettingTab, Setting } from 'obsidian';
 import MyPlugin from './main';
 
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface DevUtilsSettings {
+	obsidianName: string;
+	pluginName: string;
+	reloadPluginId: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+export const DEFAULT_SETTINGS: DevUtilsSettings = {
+	obsidianName: 'obs',
+	pluginName: 'devUtils',
+	reloadPluginId: '',
 }
 
-export class SampleSettingTab extends PluginSettingTab {
+export class DevUtilsSettingTab extends PluginSettingTab {
 	constructor(public plugin: MyPlugin) {
 		super(plugin.app, plugin);
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Obsidian module name')
+			.setDesc('Obsidian API is exposed as a global variable with this name.')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setValue(this.plugin.settings.obsidianName)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.obsidianName = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Plugin variable name')
+			.setDesc('The plugin object is available with this name.')
+			.addText(text => text
+				.setValue(this.plugin.settings.pluginName)
+				.onChange(async (value) => {
+					this.plugin.settings.pluginName = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Plugin ID to reload')
+			.addText((text) => {
+				text.setValue(this.plugin.settings.reloadPluginId)
+					.onChange(async (value) => {
+						this.plugin.settings.reloadPluginId = value;
+						await this.plugin.saveSettings();
+					});
+			});
 	}
 }
