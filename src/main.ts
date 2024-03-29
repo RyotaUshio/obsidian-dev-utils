@@ -1,12 +1,7 @@
-import { WidgetType } from '@codemirror/view';
-import { Decoration } from '@codemirror/view';
-import { DecorationSet } from '@codemirror/view';
-import { PluginValue } from '@codemirror/view';
-import { ViewPlugin } from '@codemirror/view';
 import { ViewUpdate } from '@codemirror/view';
 import { EditorView } from '@codemirror/view';
 import { EditorState, Extension } from '@codemirror/state';
-import { CachedMetadata, Editor, FileSystemAdapter, MarkdownView, Plugin, TFile } from 'obsidian';
+import { CachedMetadata, Editor, FileSystemAdapter, MarkdownView, Modifier, Platform, Plugin, TFile, Notice } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { DEFAULT_SETTINGS, DevUtilsSettings, DevUtilsSettingTab } from './settings';
 import { syntaxTree } from '@codemirror/language';
@@ -44,6 +39,24 @@ export default class DevUtilsPlugin extends Plugin {
 				await this.app.plugins.disablePlugin(this.settings.reloadPluginId);
 				// @ts-ignore
 				await this.app.plugins.enablePlugin(this.settings.reloadPluginId);
+			}
+		});
+
+		this.addCommand({
+			id: 'copy-absolute-path',
+			name: `Copy absolute path (press ${getModifierNameInPlatform('Mod')} to escape spaces)`,
+			checkCallback: (checking) => {
+				const adapter = this.app.vault.adapter;
+				if (!(adapter instanceof FileSystemAdapter)) return false;
+				const file = this.app.workspace.getActiveFile();
+				if (!file) return false;
+				if (!checking) {
+					const isModPressed = this.app.lastEvent ? obsidian.Keymap.isModifier(this.app.lastEvent, 'Mod') : false;
+					const absPath = adapter.getFullPath(file.path);
+					navigator.clipboard.writeText(isModPressed ? absPath.replace(/ /g, '\\ ') : absPath);
+					new Notice('Path copied to the clipboard.');
+				}
+				return true;
 			}
 		});
 	}
@@ -107,6 +120,14 @@ export default class DevUtilsPlugin extends Plugin {
 					}
 				})
 			},
+			searchCommand(query: string) {
+				// @ts-ignore
+				return Object.values(app.commands.commands).filter(cmd => cmd.name.toLowerCase().contains(query.toLowerCase()))
+			},
+			searchIcon(query: string) {
+				// @ts-ignore
+				return obsidian.getIconIds().filter(id => id.toLowerCase().contains(query.toLowerCase()))
+			}
 		};
 		for (const [name, fn] of Object.entries(utils)) {
 			this.registerToWindow(name, fn);
@@ -133,4 +154,20 @@ export default class DevUtilsPlugin extends Plugin {
 		this.clearUpdateListeners();
 		this.addUpdateListener(callback);
 	}
+}
+
+function getModifierNameInPlatform(mod: Modifier): string {
+    if (mod === 'Mod') {
+        return Platform.isMacOS || Platform.isIosApp ? 'Command' : 'Ctrl';
+    }
+    if (mod === 'Shift') {
+        return 'Shift';
+    }
+    if (mod === 'Alt') {
+        return Platform.isMacOS || Platform.isIosApp ? 'Option' : 'Alt';
+    }
+    if (mod === 'Meta') {
+        return Platform.isMacOS || Platform.isIosApp ? 'Command' : Platform.isWin ? 'Win' : 'Meta';
+    }
+    return 'Ctrl';
 }
